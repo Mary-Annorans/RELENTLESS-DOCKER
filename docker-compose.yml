@@ -1,0 +1,27 @@
+version: '3.8'
+
+services:
+  portfolio-website:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: mary-ann-portfolio:latest
+    container_name: mary-ann-portfolio
+    ports:
+      - "8080:80"
+    restart: unless-stopped
+    environment:
+      - NGINX_HOST=localhost
+      - NGINX_PORT=80
+    networks:
+      - portfolio-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:80"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+networks:
+  portfolio-network:
+    driver: bridge
