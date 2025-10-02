@@ -38,9 +38,9 @@ resource "aws_security_group" "jenkins_sg" {
 
 # EC2 Instance for Jenkins and Docker
 resource "aws_instance" "jenkins_server" {
-  ami           = "ami-08982f1c5bf93d976"  # Change this to the latest Ubuntu AMI
-  instance_type = "t2.micro"
-  key_name      = "victoria_kp"  # Replace with your AWS Key Pair name
+  ami           = "ami-0360c520857e3138f"  # Latest Ubuntu 22.04 LTS AMI
+  instance_type = "t3.micro"
+  key_name      = "Datadog-kp"  # Using existing AWS Key Pair
   vpc_security_group_ids = [aws_security_group.jenkins_sg.id]
 
   user_data = <<-EOF
@@ -66,7 +66,7 @@ resource "aws_instance" "jenkins_server" {
 
     # Clone your GitHub repository containing Jenkinsfile and Dockerfile
     cd /var/lib/jenkins
-    git clone https://github.com/Mary-Annorans/CI-CD-PIPELINE.git project
+    git clone https://github.com/Mary-Annorans/RELENTLESS-DOCKER.git project
 
     # Change ownership to Jenkins
     sudo chown -R jenkins:jenkins /var/lib/jenkins/project

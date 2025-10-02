@@ -6,8 +6,8 @@ pipeline {
         DOCKER_TAG = "${BUILD_NUMBER}"
         DOCKER_REGISTRY = 'maryann123456789'
         CONTAINER_NAME = 'portfolio-website'
-        EC2_HOST = 'your-ec2-public-ip' // Replace with your EC2 public IP
-        SSH_KEY = credentials('ec2-ssh-key')
+        EC2_HOST = '54.205.73.21' // Replace with your EC2 public IP
+        SSH_KEY = credentials('Datadog-kp')
     }
     
     stages {
