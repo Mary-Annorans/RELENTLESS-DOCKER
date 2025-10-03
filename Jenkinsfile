@@ -6,7 +6,7 @@ pipeline {
         DOCKER_TAG = "${BUILD_NUMBER}"
         DOCKER_REGISTRY = 'maryann123456789'
         CONTAINER_NAME = 'portfolio-website'
-        EC2_HOST = '54.205.73.21' // Replace with your EC2 public IP
+        EC2_HOST = '13.217.229.171' // Replace with your EC2 public IP
         SSH_KEY = credentials('Datadog-kp')
     }
     
@@ -48,12 +48,8 @@ pipeline {
         stage('Build Docker Image') {
             steps {
                 echo 'Building Docker image...'
-                script {
-                    def image = docker.build("${DOCKER_IMAGE}:${DOCKER_TAG}")
-                    docker.image("${DOCKER_IMAGE}:${DOCKER_TAG}").inside {
-                        sh 'echo "Image built successfully"'
-                    }
-                }
+                sh "docker build -t ${DOCKER_IMAGE}:${DOCKER_TAG} ."
+                sh 'echo "Image built successfully"'
             }
         }
         
@@ -170,21 +166,24 @@ pipeline {
                 echo 'Deploying to EC2 production environment...'
                 script {
                     sh """
-                        # Deploy to EC2 instance
-                        ssh -i ${SSH_KEY} -o StrictHostKeyChecking=no ec2-user@${EC2_HOST} "
-                            # Pull latest image
-                            docker pull ${DOCKER_REGISTRY}/${DOCKER_IMAGE}:${DOCKER_TAG}
-                            
-                            # Stop existing container
+                        # Stop existing container on EC2
+                        ssh -i ${SSH_KEY} -o StrictHostKeyChecking=no ubuntu@${EC2_HOST} "
                             docker stop ${CONTAINER_NAME} || true
                             docker rm ${CONTAINER_NAME} || true
-                            
+                            docker rmi ${DOCKER_IMAGE}:${DOCKER_TAG} || true
+                        "
+                        
+                        # Transfer the Docker image to EC2
+                        docker save ${DOCKER_IMAGE}:${DOCKER_TAG} | ssh -i ${SSH_KEY} ubuntu@${EC2_HOST} 'docker load'
+                        
+                        # Deploy new container on EC2
+                        ssh -i ${SSH_KEY} -o StrictHostKeyChecking=no ubuntu@${EC2_HOST} "
                             # Run new container
                             docker run -d \\
                                 --name ${CONTAINER_NAME} \\
                                 --restart unless-stopped \\
                                 -p 80:80 \\
-                                ${DOCKER_REGISTRY}/${DOCKER_IMAGE}:${DOCKER_TAG}
+                                ${DOCKER_IMAGE}:${DOCKER_TAG}
                             
                             # Verify deployment
                             sleep 10
@@ -201,26 +200,4 @@ pipeline {
         }
     }
     
-    post {
-        always {
-            echo 'Pipeline execution completed'
-            // Clean up any test containers
-            sh 'docker ps -a --filter "name=test-container-${BUILD_NUMBER}" --format "{{.ID}}" | xargs -r docker rm -f'
-        }
-        
-        success {
-            echo 'Pipeline succeeded!'
-            // You can add notifications here (email, Slack, etc.)
-        }
-        
-        failure {
-            echo 'Pipeline failed!'
-            // You can add failure notifications here
-        }
-        
-        cleanup {
-            // Clean up workspace
-            cleanWs()
-        }
-    }
-}
+   
